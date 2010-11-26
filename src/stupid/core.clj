@@ -18,7 +18,7 @@
   (let [field
          (.getDeclaredField clojure.lang.LispReader "macros")]
        ; so we make it public
-       (.setAccessible true field)
+       (.setAccessible field true)
        ; and get the value. If we were getting a non-static field we would
        ; specify an instance instead of `nil`.
        (.get field nil)))
@@ -26,20 +26,39 @@
 (def reader-dispatch-macros
   (let [field
          (.getDeclaredField clojure.lang.LispReader "dispatchMacros")]
-       (.setAccessible true field)
+       (.setAccessible field true)
        (.get field nil)))
 
+; The reader macros are called with two arguments, a 
+; [Reader](http://goo.gl/OeUQR) and the character that caused it to be
+; invoked. Since the character isn't going to change for a macro I'm defining
+; this function to drop the second argument.
+(defn drop-2nd-arg
+  [f] (fn [a b] (f a)))
+
 ; This function is used to define a reader macro. It takes a character or
-; a string identifying which it is setting and a function to set it to.
+; string identifying which macro it is setting and a function to set it to.
 (defn def-reader-macro
   [symbol fun]
     (cond
       (char? symbol)
-        (aset reader-macros (int symbol) fun)
+        (aset reader-macros (int symbol) (drop-2nd-arg fun))
       (= (count symbol) 1)
-        (aset reader-macros (int (first symbol)) fun)
+        (aset reader-macros (int (first symbol)) (drop-2nd-arg fun))
       (and (= (count symbol) 2) (= (first symbol) "#"))
-        (aset dispatch-reader-macros (int (first (rest symbol))) fun)
+        (aset reader-dispatch-macros (int (first (rest symbol)))
+              (drop-2nd-arg fun))
       :else
         (throw (Exception. "Bad symbol for reader macro."))))
 
+; What to do? Let's start simple. I'll define `$` to grab all text through to
+; the next occurence and just return `:foo`.
+(def-reader-macro \$
+  (fn [reader]
+    (while (not= (.read reader) (int \$)))
+    :foo))
+
+; Oh my.
+(println $gisengioesngoi#(*GHT#(P:g3nogyg9h3g
+  wg34gwjg3ngoi34hg94biufku,vyf7!! ffafefaf
+  WOPPPPPP kuh-pow!!!@))$)
