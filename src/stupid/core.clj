@@ -51,15 +51,45 @@
       :else
         (throw (Exception. "Bad symbol for reader macro."))))
 
-; What to do? Let's start simple. I'll define `$` to grab all text through to
-; the next occurence and just return `:foo`.
-(def-reader-macro \$
-  (fn [reader]
-    (while (not= (.read reader) (int \$)))
-    (println "?" reader "?")
-    :foo))
-
-; Oh my.
-(println $gisengioesngoi#(*GHT#(P:g3nogyg9h3g
-  wg34gwjg3ngoi34hg94bi\ufku,vyf7!! ffafefaf
-  WOPPPPPP kuh-pow!!!@\$)
+; The whole Scheme ecosystem seems cool. I need to check it out some time.
+; From the Sweet-expressions page I found [SRFI-49](http://goo.gl/32CgC),
+; which defines "I-expressions". It's nice, but having to throw in `group`
+; for lists leading lists seems ugly to me. There's also the problem of how
+; I'd like to terminate a body of the modified syntax (since actually 
+; modifying the reader globally to do that would make this bad idea even 
+; worse).
+; 
+; A body will begin with `#I`. The content must be on a new line and indented.
+; Instead of allowing arbitrary indentation levels I require that each be
+; a multiple of the initial indentation. This way I can just use indentation
+; to denote nested lists.
+; 
+; An Example:
+; 
+;     #I
+;       let
+;           x 2
+;           y 3
+;         + x y
+;     
+;       defn foo
+;         [bar]
+;           + bar (foo)
+;         []
+;           3
+; 
+; would be equivilent to
+; 
+;     (let
+;       ((x 2)
+;        (y 2))
+;       (+ x y))
+;     
+;     (defn foo
+;       ([bar]
+;         (+ 2 (foo)))
+;       ([]
+;         3))
+; 
+; It now occurs to me that that isn't actually how Clojure's `let` work. Still
+; a good example.
