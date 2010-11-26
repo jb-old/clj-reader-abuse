@@ -30,9 +30,9 @@
        (.get field nil)))
 
 ; The reader macros are called with two arguments, a 
-; [Reader](http://goo.gl/OeUQR) and the character that caused it to be
-; invoked. Since the character isn't going to change for a macro I'm defining
-; this function to drop the second argument.
+; [LineNumberingPushbackReader](goo.gl/7zvGf) and the character that caused
+; it to be invoked. Since the character isn't going to change for a macro I'm
+; defining this function to drop the second argument.
 (defn drop-2nd-arg
   [f] (fn [a b] (f a)))
 
@@ -56,9 +56,10 @@
 (def-reader-macro \$
   (fn [reader]
     (while (not= (.read reader) (int \$)))
+    (println "?" reader "?")
     :foo))
 
 ; Oh my.
 (println $gisengioesngoi#(*GHT#(P:g3nogyg9h3g
-  wg34gwjg3ngoi34hg94biufku,vyf7!! ffafefaf
-  WOPPPPPP kuh-pow!!!@))$)
+  wg34gwjg3ngoi34hg94bi\ufku,vyf7!! ffafefaf
+  WOPPPPPP kuh-pow!!!@\$)
