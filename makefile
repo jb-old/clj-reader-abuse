@@ -1,4 +1,4 @@
 docs: _FAKE
-	docco src/stupid/*.clj
+	docco src/abuse/*.clj
 
 _FAKE:
