@@ -1,117 +1,79 @@
 ; ## #I-expressions
 ; 
 ; This module provides add `#I` reader macro inspired by the I-expressions
-; described in [SRFI-49](http://goo.gl/32CgC).
+; described in [SRFI-49](http://goo.gl/32CgC). `#I` casues the text following
+; it to be parsed based on indentation. If the first line is indented then the
+; rule will continue until encountering a line that is less indented than the
+; first. If the first line is not indented then the only way to terminate it
+; is a closing bracket matching an opening one that occured before `#I`. The
+; indented expressions will be wrapped in a `do`. Lines that are empty except
+; for horizontal whitespace characters are ignroed. Ordinary Clojure 
+; expressions are parsed, with indentation rules not applied inside of them.
 ; 
-; describing is hard.
-; 
-; - If it's not indented it continues to EOF.
-; - If a number is specified after `#I` that is the indent width.  
-;   Else the indent width is the leading indentation of the first line.
-; - If no indentation width is specified and the first line is not indented
-;   then you are unable to indent. Don't do that.
-; - Each multiple of the indent width corresponds to a wrapping pair of 
-;   parens.
-; - Indentation is ignored inside of `()`/`{}`/`[]`.
-; - A single item with nothing else on its line or indented following it will
-;   not be wrapped in parens.
-; - `#I` is terminated before an unmatched `)`/`}`/`]`, an unindented line
-;   if its contents are indented, or EOF.
-;
-; Here's an example using `let` incorrectly.
-; 
-;     #I
-;       let
-;           x 2
-;           y 3
-;         + x y
-;     
-;       defn foo
-;         [bar]
-;           + bar (foo)
-;         []
-;           3
-; 
-;     (let
-;       ((x 2)
-;        (y 2))
-;       (+ x y))
-;     
-;     (defn foo
-;       ([bar]
-;         (+ 2 (foo)))
-;       ([]
-;         3))
-; 
-; Here's an example showing specified indentation.
-; 
-;     (defn foo
-;        []
-;          (do #I2
-;             if (> 3 1)
-;               println "foo"
-;               println "bar"))
-;
-;     (defn foo
-;        []
-;          (do
-;             (if (> 3 1)
-;               (println "foo")
-;               (println "bar"))))
-; 
-; I'll begin with naive implementation which looks exclusively at indentation.
+; SRFI-49 introduces a `group` keyword used to allow you to have a list as the
+; first item in a list, something that this syntax does not otherwise
+; accomidate. I am adverse to adding a keyword to the language so at present
+; if you require this it will have to be written as a regular Clojure
+; expression.
 
 (ns abuse.iexprs
-    (:use abuse.core)
-    (:import [clojure.lang LispReader]))
+    (:use abuse.core))
 
-(defn hws (set "\t "))
+; Horizontal whitespace characters used to denote indentation. Note that as in
+; Python tabs and spaces are treated equivilently.
+(def hws (set "\t "))
 
 ; Reads horizontal whitespace and returns a number indicating the number of
-; characters read. Zero is okay.
+; characters read. Zero is okay, this shouldn't raise an exception.
 (defn read-hws
   ([reader]
     (read-hws reader (.read reader) 0))
   
-  ([reader initch]
-    (read-hws reader initch 0))
+  ([reader initial-char]
+    (read-hws reader initial-char 0))
   
-  ([reader initch sum]
-    (if (hws initch)
+  ([reader initial-char sum]
+    (if (hws initial-char)
         (recur reader (.read reader) (+ 1 sum))
-        (do (.unread reader initch)
+        (do (.unread reader initial-char)
             0))))
 
-; Returns a number indicating the hws read on the first line with anything
-; other than hws. Doesn't want an initch.
+; Behaves as `read-hws` except that it skips over lines containing nothing
+; but horizontal whitespace.
 (defn read-hws-skippy
   [reader]
-    (loop []
-          (let [indent (read-hws reader) next-char (.read reader)]
-               (if (not= next-char \newline)
-                   (do (.unread reader next-char)
-                       indent)
-                   (recur)))))
+    (let [indent (read-hws reader) next-char (.read reader)]
+         (if (not= (char next-char) \newline)
+             (do (.unread reader next-char)
+                 indent)
+             (recur reader))))
 
-; This is the function we're defining as the macro.
+; This is the reader function we'll be defining as our `#I` macro.
 (defn read-iexprs
-  [reader initch]
-    (def first-char (.read reader))
-    
-    (def specified-indent
-         (if (Character/isDigit first-char)
-             ((get-read-method "Number") reader first-char)
-             (.unread reader first-char)))
-    
+  [reader initial-char]
     (if (not= (char (.read reader)) \newline)
         (throw (Exception. "Newline must follow #I-exprs opening.")))
     
-    ; We have to skip over blank lines.
     (def initial-indent (read-hws-skippy reader))
-    (def indent-size (or specified-indent initial-indent))
+    
+    ( { :indent })
+    
+    (def first-form (read-form reader))
+    (read-hws reader)
+    (if (not= (char (reader-peek reader)) \newline))
+    
+    ; Should make this a function that's called recursively for each level
+    ; of indentation.
+    ; Have a list stack (itself a list) containg vecs. Each token is conjed
+    ; onto the current top. When indentation increases we throw a new one on,
+    ; when indentation decreases we top the latest vec off, convert it to a
+    ; list and put it on the one below.
+    ; 
+    ; This would be easy with more state, but it feels like it should also be
+    ; really easy to do functionally. I need to develop my thinking.
     
     (#{-1 (int \newline)} (reader-peek reader))
-    
+
 )
 
 (set-reader-macro "#I" read-iexprs)

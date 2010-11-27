@@ -4,7 +4,8 @@
 ; macros. They are applied globally, are not thread-safe and depend on
 ; internal implementation details; it should probably be considered dangerous.
 (ns abuse.core
-    (:import [clojure.lang LispReader]))
+    (:import [clojure.lang LispReader])
+    (:import [java.io PushbackReader]))
 
 ; This gets the value of a field from a Java class, making it public in the
 ; process.
@@ -19,19 +20,22 @@
 ; Ditto for methods.
 (defn get-publicize-method
   ([class name argument-types]
-    (let [method (.getDeclaredMethod class name)]
+    (let [method (.getDeclaredMethod class name
+                                     (into-array Class argument-types))]
          (.setAccessible method true)
-         (.get method))))
+         (fn [& args] (.invoke method args)))))
 
 ; This grabs a read* method from LispReader.
 (def get-read-method (memoize (fn
   [name]
-    (get-publicize-method LispReader (str "read" name) [Object Object]))))
+    (get-publicize-method
+      LispReader (str "read" name) [PushbackReader Character/TYPE]))))
 
 ; This is the general reader function for reacding a form. Arguments are
 ; (PushbackReader r, boolean eofIsError, Object eofValue, boolean isRecursive)
-(def read-form (get-publicize-method LispReader "read"
-                                     [Object Object Object Object]))
+; I don't know how to specify arguments of primitive types 
+(def read-form (get-publicize-method
+  LispReader "read" [PushbackReader Boolean/TYPE Object Boolean/TYPE]))
 
 ; Peeks at the next value on a pushback reader. Remember that it only has a
 ; one-item buffer, so don't do this if you already have a value off that you'd
