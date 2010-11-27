@@ -16,6 +16,32 @@
          (.setAccessible field true)
          (.get field instance))))
 
+; Ditto for methods.
+(defn get-publicize-method
+  ([class name argument-types]
+    (let [method (.getDeclaredMethod class name)]
+         (.setAccessible method true)
+         (.get method))))
+
+; This grabs a read* method from LispReader.
+(def get-read-method (memoize (fn
+  [name]
+    (get-publicize-method LispReader (str "read" name) [Object Object]))))
+
+; This is the general reader function for reacding a form. Arguments are
+; (PushbackReader r, boolean eofIsError, Object eofValue, boolean isRecursive)
+(def read-form (get-publicize-method LispReader "read"
+                                     [Object Object Object Object]))
+
+; Peeks at the next value on a pushback reader. Remember that it only has a
+; one-item buffer, so don't do this if you already have a value off that you'd
+; like to return.
+(defn reader-peek
+  [pushback-reader]
+    (let [value (.read pushback-reader)]
+         (.unread pushback-reader value)
+         value))
+
 ; We'll begin by getting references to the arrays containg the reader macros
 ; and dispatch macros. They're indexed on a `char`.
 (def reader-macros (get-publicize-field LispReader "macros"))
@@ -53,7 +79,7 @@
           (let [old (aget reader-macros (int (first symbol)) fun)]
                (aset reader-macros (int (first symbol)) fun)
                old))
-      (and (= (count symbol) 2) (= (first symbol) "#"))
+      (and (= (count symbol) 2) (= (first symbol) \#))
         (locking reader-dispatch-macros
           (let [old (aset reader-dispatch-macros 
                           (int (first (rest symbol))) fun)]
