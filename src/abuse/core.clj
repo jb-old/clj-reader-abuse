@@ -23,7 +23,7 @@
     (let [method (.getDeclaredMethod class name
                                      (into-array Class argument-types))]
          (.setAccessible method true)
-         (fn [& args] (.invoke method args)))))
+         (fn [instance & args] (.invoke method instance (to-array args))))))
 
 ; This grabs a read* method from LispReader.
 (def get-read-method (memoize (fn
@@ -31,11 +31,14 @@
     (get-publicize-method
       LispReader (str "read" name) [PushbackReader Character/TYPE]))))
 
-; This is the general reader function for reacding a form. Arguments are
-; (PushbackReader r, boolean eofIsError, Object eofValue, boolean isRecursive)
-; I don't know how to specify arguments of primitive types 
-(def read-form (get-publicize-method
+(def read-form-builtin (get-publicize-method
   LispReader "read" [PushbackReader Boolean/TYPE Object Boolean/TYPE]))
+
+(defn read-form
+  ([reader]
+    (read-form reader true ::EOF true))
+  ([reader eof-is-error eof-value is-recursive]
+    (read-form-builtin nil reader eof-is-error eof-value is-recursive)))
 
 ; Peeks at the next value on a pushback reader. Remember that it only has a
 ; one-item buffer, so don't do this if you already have a value off that you'd

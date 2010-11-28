@@ -23,6 +23,13 @@
 ; Python tabs and spaces are treated equivilently.
 (def hws (set "\t "))
 
+; The ints corresponding to EOF and the closing brackets. Used to denote the
+; end of an #I-expressions block.
+(def terminator-ints #{-1 (int \)) (int \}) (int \])})
+
+; Adds newline, these all will indicate the end of a line in #EEEEE
+(def terminator-and-newline-ints (conj terminator-ints (int \newline)))
+
 ; Reads horizontal whitespace and returns a number indicating the number of
 ; characters read. Zero is okay, this shouldn't raise an exception.
 (defn read-hws
@@ -48,6 +55,22 @@
                  indent)
              (recur reader))))
 
+(defn line
+  [indentation forms]
+    { :indentation indentation :forms forms })
+
+; Returns a vec of forms encountered before a \newline.
+(defn read-to-eol
+  [reader]
+    (loop
+      [forms []]
+      (if (terminator-and-newline-ints (reader-peek reader))
+        forms
+        (let
+          [new-forms (conj forms (read-form reader))]
+          (read-hws reader)
+          (recur new-forms)))))
+
 ; This is the reader function we'll be defining as our `#I` macro.
 (defn read-iexprs
   [reader initial-char]
@@ -55,33 +78,31 @@
         (throw (Exception. "Newline must follow #I-exprs opening.")))
     
     (def initial-indent (read-hws-skippy reader))
+    (def first-line (read-to-eol reader))
     
-    ( { :indent })
-    
-    (def first-form (read-form reader))
-    (read-hws reader)
-    (if (not= (char (reader-peek reader)) \newline))
-    
-    ; Should make this a function that's called recursively for each level
-    ; of indentation.
-    ; Have a list stack (itself a list) containg vecs. Each token is conjed
-    ; onto the current top. When indentation increases we throw a new one on,
-    ; when indentation decreases we top the latest vec off, convert it to a
-    ; list and put it on the one below.
-    ; 
-    ; This would be easy with more state, but it feels like it should also be
-    ; really easy to do functionally. I need to develop my thinking.
-    
-    (#{-1 (int \newline)} (reader-peek reader))
-
-)
+    (loop
+      [lines [{:indentation initial-indent :forms first-line}]]
+      (if
+        (terminator-ints (reader-peek reader))
+        lines
+        (do
+          (.read reader) ; it will be a newline
+          (recur
+            (let
+              [indentation (read-hws reader)
+               forms (read-to-eol reader)]
+               (if
+                 (> (count forms) 0)
+                 (conj lines {:indentation indentation :forms forms})
+                 lines)))))))
 
 (set-reader-macro "#I" read-iexprs)
 
-#I
+(println #I
   foo to the bar yo
     yo
 
-#I2
+(println #I
       eh eh eh
         ehhhhh
+)
