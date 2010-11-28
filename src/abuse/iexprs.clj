@@ -68,7 +68,7 @@
       (if (terminator-and-newline-ints (reader-peek reader))
         forms
         (let
-          [new-forms (conj forms (read-form reader))]
+          [new-forms (conj forms (read))]
           (read-hws reader)
           (recur new-forms)))))
 
@@ -98,7 +98,7 @@
                  lines)))))))
 
 (set-reader-macro "#I" read-iexprs)
-(set-reader-macro "#D" (fn [r c] (println "!" (.read r))))
+(set-reader-macro "#D" (fn [r c] (println "!" (reader-peek r))))
 
 (println #I
   2 3 :foo 4
@@ -113,4 +113,3 @@
           :i
       :j
 )
-#D

@@ -31,14 +31,8 @@
     (get-publicize-method
       LispReader (str "read" name) [PushbackReader Character/TYPE]))))
 
-(def read-form-builtin (get-publicize-method
+(def read-builtin (get-publicize-method
   LispReader "read" [PushbackReader Boolean/TYPE Object Boolean/TYPE]))
-
-(defn read-form
-  ([reader]
-    (read-form reader true ::EOF true))
-  ([reader eof-is-error eof-value is-recursive]
-    (read-form-builtin nil reader eof-is-error eof-value is-recursive)))
 
 ; Peeks at the next value on a pushback reader. Remember that it only has a
 ; one-item buffer, so don't do this if you already have a value off that you'd
