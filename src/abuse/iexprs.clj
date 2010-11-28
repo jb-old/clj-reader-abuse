@@ -25,7 +25,7 @@
 
 ; The ints corresponding to EOF and the closing brackets. Used to denote the
 ; end of an #I-expressions block.
-(def terminator-ints #{-1 (int \)) (int \}) (int \])})
+(def terminator-ints #{-1 nil (int \)) (int \}) (int \])})
 
 ; Adds newline, these all will indicate the end of a line in #EEEEE
 (def terminator-and-newline-ints (conj terminator-ints (int \newline)))
@@ -42,8 +42,9 @@
   ([reader initial-char sum]
     (if (hws initial-char)
         (recur reader (.read reader) (+ 1 sum))
-        (do (.unread reader initial-char)
-            0))))
+        (do
+          (.unread reader initial-char)
+          sum))))
 
 ; Behaves as `read-hws` except that it skips over lines containing nothing
 ; but horizontal whitespace.
@@ -97,12 +98,19 @@
                  lines)))))))
 
 (set-reader-macro "#I" read-iexprs)
+(set-reader-macro "#D" (fn [r c] (println "!" (.read r))))
 
 (println #I
-  foo to the bar yo
-    yo
+  2 3 :foo 4
+    9)
 
 (println #I
-      eh eh eh
-        ehhhhh
+      :a :b :c
+        :d
+        :e
+          :g
+        :h
+          :i
+      :j
 )
+#D
