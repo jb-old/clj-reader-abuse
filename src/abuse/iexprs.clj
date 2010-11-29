@@ -108,14 +108,18 @@
          subsequent-line (first (rest lines))
          rest-forms (for
            [line* (super-seq (rest lines))
-            :while (>=
+            :while (and (first line*) (>
               (:indentation (first line*))
-              (subsequent-line :indentation))
-            :when (=
+              initial-indent))
+            :when (<=
               (:indentation (first line*))
-              (subsequent-line :indentation))]
-           (interpret-next-indented-line line*))
-         foo (pprint rest-forms)
+              initial-indent)]
+           (if (= (:indentation (first line*))
+                  (:indentation subsequent-line))
+               (interpret-next-indented-line line*)
+               (throw (Exception. (str
+                 "Line " ((first line*) :number) "'s indentation does not "
+                 " match any previous lines")))))
          forms (concat first-forms rest-forms)]
         (if (> (count forms) 1)
           (list* forms)
