@@ -87,24 +87,59 @@
                   :number line-number})
                lines)))))))
 
+; `[a b c]` -> `[[a b c] [b c] [c]]`
+(defn super-seq
+  [s]
+    (if s
+      (lazy-seq (cons
+        s
+        (super-seq (rest s))))))
+
+; bug: ignores c in
+; 
+;     a
+;       b
+;      c
+(defn interpret-next-indented-line
+  [lines]
+    (if (seq lines)
+      (let
+        [{initial-indent :indentation first-forms :forms} (first lines)
+         subsequent-line (first (rest lines))
+         rest-forms (for
+           [line* (super-seq (rest lines))
+            :while (>=
+              (:indentation (first line*))
+              (subsequent-line :indentation))
+            :when (=
+              (:indentation (first line*))
+              (subsequent-line :indentation))]
+           (interpret-next-indented-line line*))
+         foo (pprint rest-forms)
+         forms (concat first-forms rest-forms)]
+        (if (> (count forms) 1)
+          (list* forms)
+          (first forms)))))
+
 ; This is the reader function we'll be defining as our `#I` macro.
 (defn read-iexprs
   [reader initial-char]
     (read-hws reader)
-    (let [first-form (if (not= (char (reader-peek reader)) \newline)
+    (let [initial-line-number (.getLineNumber reader)
+          first-form (if (not= (char (reader-peek reader)) \newline)
                            (read reader)
                            'do)
-          lines (read-iexpr-lines reader)
-          
-          rest-forms lines
-          ]
-      (list* first-form lines)))
+          lines (read-iexpr-lines reader [{
+            :indentation -1
+            :forms [first-form]
+            :number initial-line-number}])]
+          (interpret-next-indented-line lines)))
 
 (set-reader-macro "#I" read-iexprs)
 
 (println "<pre>")
 
-(pprint #I
+(pprint '#I
   2 3 :foo 4
     9)
 
