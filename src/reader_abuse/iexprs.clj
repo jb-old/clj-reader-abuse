@@ -133,7 +133,9 @@
     (read-hws reader)
     (let [initial-line-number (.getLineNumber reader)
           first-form (if (not= (char (reader-peek reader)) \newline)
-                           (read reader)
+                           (let [result (read reader)]
+                                (read-hws reader)
+                                result)
                            'do)
           lines (read-iexpr-lines reader [{
             :indentation -1
