@@ -47,16 +47,6 @@
           (.unread reader initial-char)
           sum))))
 
-; Behaves as `read-hws` except that it skips over lines containing nothing
-; but horizontal whitespace.
-(defn read-hws-skippy
-  [reader]
-    (let [indent (read-hws reader) next-char (.read reader)]
-         (if (not= (char next-char) \newline)
-             (do (.unread reader next-char)
-                 indent)
-             (recur reader))))
-
 (defn line
   [indentation forms]
     { :indentation indentation :forms forms })
@@ -79,11 +69,8 @@
     (if (not= (char (.read reader)) \newline)
         (throw (Exception. "Newline must follow #I-exprs opening.")))
     
-    (def initial-indent (read-hws-skippy reader))
-    (def first-line (read-to-eol reader))
-    
     (loop
-      [lines [{:indentation initial-indent :forms first-line}]]
+      [lines []]
       (if
         (terminator-ints (reader-peek reader))
         lines
