@@ -1,4 +1,4 @@
-(ns abuse.iexprs
+(ns reader-abuse.iexprs
   (:require clojure.test))
 
 (deftest one-form

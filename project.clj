@@ -1,3 +1,3 @@
-(defproject abuse "0.0.1-SNAPSHOT"
-  :description "Abusing the reader macros."
+(defproject reader-abuse "0.0.1-SNAPSHOT"
+  :description "A few Clojure reader macros and functions to define them."
   :dependencies [[clojure "1.2.0"] [clojure-contrib "1.2.0"]])

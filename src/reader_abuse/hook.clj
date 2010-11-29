@@ -6,8 +6,8 @@
 ; 
 ; Would print `!`.
 
-(ns abuse.hook
-    (:use abuse.core))
+(ns reader-abuse.hook
+    (:use reader-abuse.core))
 
 (defn read-hook
   [reader initial-char]

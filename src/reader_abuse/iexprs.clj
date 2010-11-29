@@ -15,10 +15,12 @@
 ; accomidate. I am adverse to adding a keyword to the language so at present
 ; if you require this it will have to be written as a regular Clojure
 ; expression.
+; 
+; Oh, and this will probably mess up if you use comments. Gotta fix that
+; later.
 
-(ns abuse.iexprs
-    (:use abuse.core)
-    (:use abuse.hook) (:use clojure.pprint)) ; for nix this when finished
+(ns reader-abuse.iexprs
+    (:use reader-abuse.core))
 
 ; Horizontal whitespace characters used to denote indentation. Note that as in
 ; Python tabs and spaces are treated equivilently.
@@ -140,21 +142,3 @@
           (interpret-next-indented-line lines)))
 
 (set-reader-macro "#I" read-iexprs)
-
-(println "<pre>")
-
-(pprint '#I
-  2 3 :foo 4
-    9)
-
-(pprint '#I pprint
-      (:a :b :c)
-        [:d]
-        #{:e}
-          :g
-        :h
-          :i
-      :j
-)
-
-(println "</pre>")

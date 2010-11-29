@@ -3,7 +3,7 @@
 ; This module abuses clojures internals to allow you to get and set reader
 ; macros. They are applied globally, are not thread-safe and depend on
 ; internal implementation details; it should probably be considered dangerous.
-(ns abuse.core
+(ns reader-abuse.core
     (:import [clojure.lang LispReader])
     (:import [java.io PushbackReader]))
 
