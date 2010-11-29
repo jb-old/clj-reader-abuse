@@ -63,27 +63,42 @@
           (read-hws reader)
           (recur new-forms)))))
 
+(defn read-iexpr-lines
+  ([reader]
+    (read-iexpr-lines reader []))
+  
+  ([reader lines]
+    (if
+      (terminator-ints (reader-peek reader))
+      lines
+      (do
+        (.read reader) ; it will be a newline
+        (recur
+          reader
+          (let
+            [line-number (.getLineNumber reader)
+             indentation (read-hws reader)
+             forms (read-to-eol reader)]
+             (if
+               (> (count forms) 0) ; don't care 'bout those empty lines!
+               (conj lines
+                 {:indentation indentation
+                  :forms forms
+                  :number line-number})
+               lines)))))))
+
 ; This is the reader function we'll be defining as our `#I` macro.
 (defn read-iexprs
   [reader initial-char]
-    (if (not= (char (.read reader)) \newline)
-        (throw (Exception. "Newline must follow #I-exprs opening.")))
-    
-    (loop
-      [lines []]
-      (if
-        (terminator-ints (reader-peek reader))
-        lines
-        (do
-          (.read reader) ; it will be a newline
-          (recur
-            (let
-              [indentation (read-hws reader)
-               forms (read-to-eol reader)]
-               (if
-                 (> (count forms) 0) ; don't care 'bout those empty lines!
-                 (conj lines {:indentation indentation :forms forms})
-                 lines)))))))
+    (read-hws reader)
+    (let [first-form (if (not= (char (reader-peek reader)) \newline)
+                           (read reader)
+                           'do)
+          lines (read-iexpr-lines reader)
+          
+          rest-forms lines
+          ]
+      (list* first-form lines)))
 
 (set-reader-macro "#I" read-iexprs)
 
@@ -93,15 +108,10 @@
   2 3 :foo 4
     9)
 
-(defn p [r] (println "!!!!" (.read r)))
-
-(pprint #I
-      
-      
-      
-      :a :b :c
-        :d
-        :e
+(pprint '#I pprint
+      (:a :b :c)
+        [:d]
+        #{:e}
           :g
         :h
           :i
