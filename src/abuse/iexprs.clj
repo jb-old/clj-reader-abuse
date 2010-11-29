@@ -17,11 +17,12 @@
 ; expression.
 
 (ns abuse.iexprs
-    (:use abuse.core))
+    (:use abuse.core)
+    (:use abuse.hook) (:use clojure.pprint)) ; for nix this when finished
 
 ; Horizontal whitespace characters used to denote indentation. Note that as in
 ; Python tabs and spaces are treated equivilently.
-(def hws (set "\t "))
+(def hws-ints #{(int \t) 32})
 
 ; The ints corresponding to EOF and the closing brackets. Used to denote the
 ; end of an #I-expressions block.
@@ -40,7 +41,7 @@
     (read-hws reader initial-char 0))
   
   ([reader initial-char sum]
-    (if (hws initial-char)
+    (if (hws-ints initial-char)
         (recur reader (.read reader) (+ 1 sum))
         (do
           (.unread reader initial-char)
@@ -68,7 +69,7 @@
       (if (terminator-and-newline-ints (reader-peek reader))
         forms
         (let
-          [new-forms (conj forms (read))]
+          [new-forms (conj forms (read reader))]
           (read-hws reader)
           (recur new-forms)))))
 
@@ -93,18 +94,24 @@
               [indentation (read-hws reader)
                forms (read-to-eol reader)]
                (if
-                 (> (count forms) 0)
+                 (> (count forms) 0) ; don't care 'bout those empty lines!
                  (conj lines {:indentation indentation :forms forms})
                  lines)))))))
 
 (set-reader-macro "#I" read-iexprs)
-(set-reader-macro "#D" (fn [r c] (println "!" (reader-peek r))))
 
-(println #I
+(println "<pre>")
+
+(pprint #I
   2 3 :foo 4
     9)
 
-(println #I
+(defn p [r] (println "!!!!" (.read r)))
+
+(pprint #I
+      
+      
+      
       :a :b :c
         :d
         :e
@@ -113,3 +120,5 @@
           :i
       :j
 )
+
+(println "</pre>")
