@@ -90,7 +90,7 @@
 ; `[a b c]` -> `[[a b c] [b c] [c]]`
 (defn super-seq
   [s]
-    (if s
+    (if (seq s)
       (lazy-seq (cons
         s
         (super-seq (rest s))))))
@@ -113,13 +113,13 @@
               initial-indent))
             :when (<=
               (:indentation (first line*))
-              initial-indent)]
+              (:indentation subsequent-line))]
            (if (= (:indentation (first line*))
                   (:indentation subsequent-line))
                (interpret-next-indented-line line*)
                (throw (Exception. (str
                  "Line " ((first line*) :number) "'s indentation does not "
-                 " match any previous lines")))))
+                 " match any previous lines.")))))
          forms (concat first-forms rest-forms)]
         (if (> (count forms) 1)
           (list* forms)
