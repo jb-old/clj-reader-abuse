@@ -45,10 +45,10 @@ for now this example should make it mostly clear.
 
 The above is equivalent to the following.
 
-    (println 
+    (println (do
       (+
         (* 2 3)
-        (/ 4 2)))
+        (/ 4 2))))
     
     (println
       1 2 3 4)
