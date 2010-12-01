@@ -97,11 +97,6 @@
         s
         (super-seq (rest s))))))
 
-; bug: ignores c in
-; 
-;     a
-;       b
-;      c
 (defn interpret-next-indented-line
   [lines]
     (if (seq lines)
@@ -128,6 +123,8 @@
           (first forms)))))
 
 ; This is the reader function we'll be defining as our `#I` macro.
+; dedent termination not yet implemented, oops.
+; todo: any number of leading forms using read delimited.
 (defn read-iexprs
   ([reader initial-char]
     (read-hws reader)
