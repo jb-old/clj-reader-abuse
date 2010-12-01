@@ -1,24 +1,25 @@
 ; *Inspired by [David A Wheeler's Curly Infix syntax](http://goo.gl/zARpL).*
 ; 
-; This module defines a macro `infixed` allowing the user to write infix
-; expressions. A reader macro will be later be added to make this more
-; syntactically concise. For example, if the chosen syntax were
-; `#[forms...]`:
+; Descriptions are hard.
 ; 
 ;     #[a + b + c + d] -> (+ a b c d)
 ;     #[a + #[b / c]] -> (+ a (/ b c))
-; 
-; Only one operator may be used in an expression. Support for mixing certain
-; comparison operations (identified by `(isa operator ::boolean-and-able)`)
-; will be added to work as follows:
-; 
 ;     #[a < b < c = d > e] -> (and (< a b c) (= c d) (> d e))
 
 (ns reader-abuse.infix
     (:use reader-abuse.core))
 
-(for [operator [< <= = == not= >= >]]
-  (derive operator ::boolean-and-able))
+(def boolean-and-ables (ref #{'< '<= '= '== 'not= '>= '>}))
+
+; TODO: more concise, as promised.
+(defn infix-with-and
+  [forms]
+    (list* 'and (loop
+      [previous-operand (first forms) remaining (rest forms) result []]
+      (if (not (seq remaining))
+        result
+        (recur (nth remaining 1) (drop 2 remaining) (conj result
+          (list (first remaining) previous-operand (nth remaining 1))))))))
 
 (defmacro infixed
   [& forms]
@@ -30,9 +31,16 @@
       (if (= 1 (count forms))
         (first forms)
         (if (apply = (take-nth 2 (rest vforms))) ; 
-          (list* (first forms) (take-nth 2 vforms))
-          (if (every? #(isa? % ::boolean-and-able) (take-nth 2 (rest vforms)))
-            (throw (Exception. "NOT YET IMPLEMENTED SORRY"))
-            (throw (Exception. (str
-              "Distinct operators in infix expression must all be "
-              "::boolean-and-able."))))))))
+          (list* (nth forms 1) (take-nth 2 vforms))
+          (if (every? @boolean-and-ables (take-nth 2 (rest vforms)))
+            (list* (infix-with-and vforms))
+            (throw (Exception. "Invalid distinct infix operators.")))))))
+
+(def infixed-open "#[")
+(def infixed-close \])
+
+(defn read-infixed
+  [reader initial-char]
+    `(infixed ~@(read-delimited-list nil infixed-close reader true)))
+
+(set-reader-macro infixed-open read-infixed)

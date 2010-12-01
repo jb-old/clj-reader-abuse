@@ -25,14 +25,9 @@
          (.setAccessible method true)
          (fn [instance & args] (.invoke method instance (to-array args))))))
 
-; This grabs a read* method from LispReader.
-(def get-read-method (memoize (fn
-  [name]
-    (get-publicize-method
-      LispReader (str "read" name) [PushbackReader Character/TYPE]))))
-
-(def read-builtin (get-publicize-method
-  LispReader "read" [PushbackReader Boolean/TYPE Object Boolean/TYPE]))
+(def read-delimited-list (get-publicize-method
+    LispReader "readDelimitedList"
+    [Character/TYPE PushbackReader Boolean/TYPE]))
 
 ; Peeks at the next value on a pushback reader. Remember that it only has a
 ; one-item buffer, so don't do this if you already have a value off that you'd
