@@ -28,7 +28,7 @@
 
 ; The ints corresponding to EOF and the closing brackets. Used to denote the
 ; end of an #I-expressions block.
-(def terminator-ints #{-1 nil (int \)) (int \}) (int \])})
+(def terminator-ints #{-1 65535 nil (int \)) (int \}) (int \])})
 
 ; Adds newline, these all will indicate the end of a line in #EEEEE
 (def terminator-and-newline-ints (conj terminator-ints (int \newline)))
@@ -129,7 +129,7 @@
 
 ; This is the reader function we'll be defining as our `#I` macro.
 (defn read-iexprs
-  [reader initial-char]
+  ([reader initial-char]
     (read-hws reader)
     (let [initial-line-number (.getLineNumber reader)
           first-form (if (not= (char (reader-peek reader)) \newline)
@@ -142,5 +142,8 @@
             :forms [first-form]
             :number initial-line-number}])]
           (interpret-next-indented-line lines)))
+  ([reader]
+    (read-iexprs reader nil))) ; NOTE THAT WE DO NOT READ INITIAL CHAR
+    
 
 (set-reader-macro "#I" read-iexprs)

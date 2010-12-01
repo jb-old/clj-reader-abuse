@@ -1,5 +1,6 @@
 test: _FAKE
-	cake test
+	cake reload
+	cake test -v
 
 docs: _FAKE
 	docco src/reader_abuse/*.clj
