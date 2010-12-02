@@ -43,6 +43,17 @@
 
 ; --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
 
+(deftest test-read-iexprs-lines-lazy
+  (is=
+    [{:indentation 0 
+    ]
+    (read-iexprs-lines-lazy (input
+      ""
+    ))
+)
+
+; --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+
 (deftest test-interpret-next-indented-line
   (let [f interpret-next-indented-line]
     (is= '(foo bar)
