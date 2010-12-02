@@ -25,9 +25,15 @@
          (.setAccessible method true)
          (fn [instance & args] (.invoke method instance (to-array args))))))
 
-(def read-delimited-list (get-publicize-method
+(def read-delimited-list-native (get-publicize-method
     LispReader "readDelimitedList"
     [Character/TYPE PushbackReader Boolean/TYPE]))
+
+(defn read-delimited-list
+  ([reader delimiter recursive]
+    (read-delimited-list-native nil delimiter reader recursive))
+  ([reader delimiter]
+    (read-delimited-list reader delimiter true)))
 
 ; Peeks at the next value on a pushback reader. Remember that it only has a
 ; one-item buffer, so don't do this if you already have a value off that you'd

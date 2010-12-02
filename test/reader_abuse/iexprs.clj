@@ -11,8 +11,8 @@
 (defmacro is=
   [& forms] (list 'is (list* '= forms)))
 
-; read-hws, those tests are easy to write.
-; oh good, I have figured out how to write a test
+; --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+
 (deftest read-hws-null
   (is= 0 (read-hws (input ""))))
 
@@ -41,7 +41,26 @@
     (is= 0 (read-hws in))
     (is= (int \a) (.read in))))
 
-; read-iexprs
+; --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+
+(deftest test-interpret-next-indented-line
+  (let [f interpret-next-indented-line]
+    (is= '(foo bar)
+      (f [{ :indentation 0 :forms '[foo] }
+          { :indentation 1 :forms '[bar] }]))
+    (is= '(foo (bar baz))
+      (f [{ :indentation 0 :forms '[foo] }
+          { :indentation 1 :forms '[bar baz] }]))
+    (is= '(foo bar baz)
+      (f [{ :indentation 0 :forms '[foo bar] }
+          { :indentation 1 :forms '[baz] }]))
+    (is= '(foo bar (baz woo))
+      (f [{ :indentation 0 :forms '[foo bar] }
+          { :indentation 1 :forms '[baz woo] }]))
+))
+
+; --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+
 (deftest read-iexpers-single-delimiter-terminated
   (is= '(do 4) (read-iexprs (input "\n4)"))))
 

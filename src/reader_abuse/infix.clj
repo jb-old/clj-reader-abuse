@@ -41,6 +41,6 @@
 
 (defn read-infixed
   [reader initial-char]
-    `(infixed ~@(read-delimited-list nil infixed-close reader true)))
+    `(infixed ~@(read-delimited-list reader infixed-close)))
 
 (set-reader-macro infixed-open read-infixed)

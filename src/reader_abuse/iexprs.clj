@@ -24,7 +24,7 @@
 
 ; Horizontal whitespace characters used to denote indentation. Note that as in
 ; Python tabs and spaces are treated equivilently.
-(def hws-ints #{(int \t) 32})
+(def hws-ints #{(int \tab) 32})
 
 ; The ints corresponding to EOF and the closing brackets. Used to denote the
 ; end of an #I-expressions block.
@@ -54,6 +54,7 @@
     { :indentation indentation :forms forms })
 
 ; Returns a vec of forms encountered before a \newline.
+; Can't just use read-delimited because we don't want to die on EOF.
 (defn read-to-eol
   [reader]
     (loop
@@ -65,29 +66,16 @@
           (read-hws reader)
           (recur new-forms)))))
 
-(defn read-iexpr-lines
-  ([reader]
-    (read-iexpr-lines reader []))
-  
-  ([reader lines]
-    (if
-      (terminator-ints (reader-peek reader))
-      lines
-      (do
-        (.read reader) ; it will be a newline
-        (recur
-          reader
-          (let
-            [line-number (.getLineNumber reader)
-             indentation (read-hws reader)
-             forms (read-to-eol reader)]
-             (if
-               (> (count forms) 0) ; don't care 'bout those empty lines!
-               (conj lines
-                 {:indentation indentation
-                  :forms forms
-                  :number line-number})
-               lines)))))))
+(defn read-iexprs-lines-lazy
+  [reader]
+    (if (not (terminator-ints (reader-peek reader)))
+      (.read reader) ; WILL be a newline
+      (let [line {:number (.getLineNumber reader)
+                  :identation (read-hws reader)
+                  :forms (read-to-eol reader)}]
+          (if (> (line :indentation) 0)
+            (lazy-seq line (read-iexprs-lines-lazy reader))
+            (read-iexprs-lines-lazy reader)))))
 
 ; `[a b c]` -> `[[a b c] [b c] [c]]`
 (defn super-seq
@@ -129,18 +117,14 @@
   ([reader initial-char]
     (read-hws reader)
     (let [initial-line-number (.getLineNumber reader)
-          first-form (if (not= (char (reader-peek reader)) \newline)
-                           (let [result (read reader)]
-                                (read-hws reader)
-                                result)
-                           'do)
-          lines (read-iexpr-lines reader [{
+          first-forms (or (read-to-eol reader) '[do])
+          lead-line {
             :indentation -1
-            :forms [first-form]
-            :number initial-line-number}])]
-          (interpret-next-indented-line lines)))
+            :forms first-forms
+            :number initial-line-number}]
+          (interpret-next-indented-line (conj lead-line (doall (read-iexprs-lines-lazy reader))))))
   ([reader]
     (read-iexprs reader nil))) ; NOTE THAT WE DO NOT READ INITIAL CHAR
-    
 
 (set-reader-macro "#I" read-iexprs)
+
