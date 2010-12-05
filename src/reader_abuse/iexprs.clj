@@ -24,7 +24,7 @@
 
 ; Horizontal whitespace characters used to denote indentation. Note that as in
 ; Python tabs and spaces are treated equivilently.
-(def hws-ints #{(int \t) 32})
+(def hws-ints #{(int \tab) 32})
 
 ; The ints corresponding to EOF and the closing brackets. Used to denote the
 ; end of an #I-expressions block.
@@ -56,14 +56,11 @@
 ; Returns a vec of forms encountered before a \newline.
 (defn read-to-eol
   [reader]
-    (loop
-      [forms []]
-      (if (terminator-and-newline-ints (reader-peek reader))
-        forms
-        (let
-          [new-forms (conj forms (read reader))]
-          (read-hws reader)
-          (recur new-forms)))))
+    (if (not (terminator-and-newline-ints (reader-peek reader)))
+      (list*
+        (read reader)
+        (read-to-eol reader))))
+        
 
 (defn read-iexpr-lines
   ([reader]
@@ -116,7 +113,7 @@
                (interpret-next-indented-line line*)
                (throw (Exception. (str
                  "Line " ((first line*) :number) "'s indentation does not "
-                 " match any previous lines.")))))
+                 " match any previous lines." subsequent-line)))))
          forms (concat first-forms rest-forms)]
         (if (> (count forms) 1)
           (list* forms)

@@ -1,8 +1,7 @@
 (ns reader-abuse.trying
     (:require reader-abuse.iexprs)
     (:require reader-abuse.infix))
-
-(do #I
+#I
 
 ns reader-abuse.trying
   :require
@@ -11,12 +10,12 @@ ns reader-abuse.trying
 defn take-all
   "(take n s) or nil if #[n < (count s)]."
   [n s]
-    let [v (vec (take s))]
+    let [v (vec (take n s))]
       if #[(count v) < n]
         v
 
 defn chains
- "Returns a lazy sequence of all length n subsequences of s."
+  "Returns a lazy sequence of all length n subsequences of s."
   [n s]
     if (first s)
       lazy-seq
@@ -25,7 +24,7 @@ defn chains
 
 defn vec-split-last
   [v]
-    let [len (count v)]
+    let [n (count v)]
       list
         subvec v 0 #[n - 1]
         nth #[n - 1] v
@@ -37,21 +36,22 @@ defn markov-chains
       ;else
         into (hash-map)
           map
-            comp vec-split-last fn[[key value]] list
-              key
-              if #[n > 1]
-                markov-chains #[n - 1] s
-                value
+            comp vec-split-last
+              fn [[key value]]
+                list
+                  key
+                  if #[n > 1]
+                    markov-chains #[n - 1] s
+                    value
             chains #[n + 1] s
 
 println
-  let [f markov-chains 1 ["hello"
+  let [f (markov-chains 1 ["hello"
                           "world"
                           "where"
                           "in"
                           "the"
                           "world"
                           "hello"
-                          "viewers"]
+                          "viewers"])]
     println ((f))
-    
