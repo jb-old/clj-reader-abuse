@@ -60,7 +60,6 @@
       (list*
         (read reader)
         (read-to-eol reader))))
-        
 
 (defn read-iexpr-lines
   ([reader]
