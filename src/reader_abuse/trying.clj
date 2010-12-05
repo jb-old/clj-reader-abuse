@@ -1,28 +1,57 @@
 (ns reader-abuse.trying
     (:require reader-abuse.iexprs)
-    (:require reader-abuse.hook))
+    (:require reader-abuse.infix))
 
 (do #I
 
 ns reader-abuse.trying
-  :import
-    javax.swing JFrame JPanel KeyStroke AbstractAction
+  :require
+    [clojure.pprint :as pprint]
 
-defn foo
-  [x]
-    foo x 5
-  
-  [x y]
-    * x y
+defn take-all
+  "(take n s) or nil if #[n < (count s)]."
+  [n s]
+    let [v (vec (take s))]
+      if #[(count v) < n]
+        v
 
-println "Hello World"
+defn chains
+ "Returns a lazy sequence of all length n subsequences of s."
+  [n s]
+    if (first s)
+      lazy-seq
+        take-all n (first s)
+        chains n (next s)
 
-let [x 5]
-  println "x is" x
-  
-  doseq [y (range x)]
-    println "y approaching" x "and is at" y
-    println (foo x y)
+defn vec-split-last
+  [v]
+    let [len (count v)]
+      list
+        subvec v 0 #[n - 1]
+        nth #[n - 1] v
 
+defn markov-chains
+  "Returns a nested map representing a markov chain of length n based on s."
+  [n s]
+    let [v (vec (seq s))]
+      ;else
+        into (hash-map)
+          map
+            comp vec-split-last fn[[key value]] list
+              key
+              if #[n > 1]
+                markov-chains #[n - 1] s
+                value
+            chains #[n + 1] s
 
-)
+println
+  let [f markov-chains 1 ["hello"
+                          "world"
+                          "where"
+                          "in"
+                          "the"
+                          "world"
+                          "hello"
+                          "viewers"]
+    println ((f))
+    
