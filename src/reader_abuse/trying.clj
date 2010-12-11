@@ -1,47 +1,54 @@
 (ns reader-abuse.trying
     (:require reader-abuse.iexprs)
-    (:require reader-abuse.infix))
-
-#I
+    (:require reader-abuse.infix)
+    (:require reader-abuse.hook))
+(do #I
 
 ns reader-abuse.trying
   :require
     [clojure.pprint :as pprint]
+    [clojure.contrib.duck-streams :as duck]
 
-defn normalize-weights [weighted-values]
-  "Normalizes the weights in a sequence of maps with :weight and :value."
+defn normalize-weights [weighted-results]
+  "Normalizes the weights in a sequence of value -> weight maps to have a
+  total weight of 1.
   
-  let [weight-sum (reduce + (map :weight weighted-values))]
-    for [item weighted-values]
-      {:weight #[(:weight item) / weight-sum]
-       :value (:value item)}
+  This'll work on any sequence of pairs, and it'll sum weights for the same
+  value appropriately, so you can just feed it a sequence of samples."
+  
+  let [weight-sum (reduce + (map value weighted-values))]
+    into {}
+      for [[result weight] weighted-values]
+        [result #[weight / weight-sum]]
 
-defn weighted-sample [normalized-weighted-values]
-  "Samples an object from a sequence of maps with :weight and :value, where
-  the weights are normalized to have a sum of 1."
+defn weighted-sample
+  "Randomly samples an object given a sequence of value -> weight maps.
+  You probably want the total mass to be 1."
   
-  loop [remaining-values normalized-weighted-values
-        remaining-space (rand)]
-    let [current-weight (:weight (first remaining-values))]
+  [normalized-weighted-results]
+    weighted-sample normalized-weighted-values (rand)
+  
+  [normalized-weighted-results remaining-weight]
+    let [current-weight (value (first remaining-values))]
       if #[remaining-space < current-weight]
         (first remaining-values) :value
         recur (rest remaining-values) #[remaining-space - current-weight]
 
 defn take-all [n s]
-  "(take n s) or nil if #[n < (count s)]."
+  "(vec (take n s)) or nil if #[n < (count s)]."
   
-  let [v (vec (take n s))]
-    if #[(count v) = n]
-      v
+  let [taken-vec (vec (take n s))]
+    if #[(count taken-vec) = n]
+      taken-vec
 
 defn chains [n s]
   "Returns a lazy sequence of all length n subsequences of s."
   
-  let [link (take-all n s)]
-    if link
+  let [chain (take-all n s)]
+    if chain
       lazy-seq
         cons
-          link
+          chain
           chains n (rest s)
 
 defn vec-split-last [v]
@@ -112,25 +119,38 @@ defn markov-sample
     markov-sample weights (rand-nth (keys weights))
 
 defn markov-sample-chain
-  [weights starting-point]
+  [weights starting-point terminator]
     let [sample (markov-sample weights starting-point)]
-      if #[sample not= ::end]
+      if #[sample not= terminator]
         lazy-seq
           cons
             sample
-            markov-sample-chain weights
+            markov-sample-chain
+              weights
               conj
                 subvec (vec starting-point) 1
                 sample
   
+  [weights starting-point]
+    markov-sample-chain
+      weights
+      starting-point
+      ::end
+  
   [weights]
-    markov-sample-chain weights
+    markov-sample-chain
+      weights
       rand-nth (vec (filter #(= ::start (first %))) (weights :keys))
 
-def lipsum-sample
-  markov-evaluate 3 "But I must explain to you how all this mistaken idea of denouncing pleasure and praising pain was born and I will give you a complete account of the system, and expound the actual teachings of the great explorer of the truth, the master-builder of human happiness. No one rejects, dislikes, or avoids pleasure itself, because it is pleasure, but because those who do not know how to pursue pleasure rationally encounter consequences that are extremely painful. Nor again is there anyone who loves or pursues or desires to obtain pain of itself, because it is pain, but occasionally circumstances occur in which toil and pain can procure him some great pleasure. To take a trivial example, which of us ever undertakes laborious physical exercise, except to obtain some advantage from it? But who has any right to find fault with a man who chooses to enjoy a pleasure that has no annoying consequences, or one who avoids a pain that produces no resultant pleasure? On the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain. These cases are perfectly simple and easy to distinguish. In a free hour, when our power of choice is untrammelled and when nothing prevents our being able to do what we like best, every pleasure is to be welcomed and every pain avoided. But in certain circumstances and owing to the claims of duty or the obligations of business it will frequently occur that pleasures have to be repudiated and annoyances accepted. The wise man therefore always holds in these matters to this principle of selection: he rejects pleasures to secure other greater pleasures, or else he endures pains to avoid worse pains."
+def holmes-evaluation
+  markov-evaluate 5 (duck/slurp* "/Users/jeremy/holmes.txt")
 
-println
-  "<pre>"
-  apply str "N" (markov-sample-chain lipsum-sample ". N")
-  "</pre>"
+defn go []
+  println
+   str
+      "<pre>The "
+      apply str (markov-sample-chain holmes-evaluation " The " \.)
+      "</pre>"
+
+(go)
+)
