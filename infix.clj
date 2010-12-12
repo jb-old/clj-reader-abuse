@@ -24,7 +24,7 @@
 (defmacro infixed
   [& forms]
     (let [vforms (vec (for [form forms]
-                           (if (vector? form) (vec* `infixed form) form)))]
+                           (if (vector? form) `(infixed ~@form) form)))]
       (if (even? (count vforms))
         (throw (Exception. "Even number of forms in infix expression.")))
       (if (= 0 (count forms))
