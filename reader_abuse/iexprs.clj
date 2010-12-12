@@ -134,6 +134,8 @@
             :indentation -1
             :forms [first-form]
             :number initial-line-number}])]
+          (if (= 65535 (reader-peek reader))
+            (do (.read reader) (.unread reader (int \newline))))
           (interpret-next-indented-line lines)))
   ([reader]
     (read-iexprs reader nil))) ; NOTE THAT WE DO NOT READ INITIAL CHAR
