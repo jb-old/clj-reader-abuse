@@ -4,7 +4,8 @@
               abuse.infix))
 #I
 
-def ** Math/pow
+defn ** [a b]
+  Math/pow a b
 
 defmacro domacro [& body]
   syntax-quote do
