@@ -15,4 +15,4 @@ defmacro domacro [& body]
 
 defmacro let* [& pairs]
   let [symbol (first (last pairs))]
-    list `let vec pairs (for [[name value] pairs] [name value] symbol)
+    list `let (vec (for [[name value] pairs] [name value])) symbol
