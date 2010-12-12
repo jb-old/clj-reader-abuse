@@ -19,8 +19,8 @@
 ; Oh, and this will probably mess up if you use comments. Gotta fix that
 ; later.
 
-(ns reader-abuse.iexprs
-    (:use reader-abuse.core))
+(ns abuse.iexprs
+    (:use abuse.core))
 
 ; Horizontal whitespace characters used to denote indentation. Note that as in
 ; Python tabs and spaces are treated equivilently.

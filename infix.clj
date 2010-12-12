@@ -6,8 +6,8 @@
 ;     #[a + #[b / c]] -> (+ a (/ b c))
 ;     #[a < b < c = d > e] -> (and (< a b c) (= c d) (> d e))
 
-(ns reader-abuse.infix
-    (:use reader-abuse.core))
+(ns abuse.infix
+    (:use abuse.core))
 
 (def boolean-and-ables (ref #{'< '<= '= '== 'not= '>= '>}))
 

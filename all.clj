@@ -1,9 +1,8 @@
-(ns reader-abuse.hook
-    (:require reader-abuse.core
-              reader-abuse.iexprs
-              reader-abuse.infix))
-
-(do #I
+(ns abuse.all
+    (:require abuse.core
+              abuse.iexprs
+              abuse.infix))
+#I
 
 def ** Math/pow
 
@@ -14,8 +13,5 @@ defmacro domacro [& body]
       (domacro#)
 
 defmacro let* [& pairs]
-  let [value (first (last pairs))]
+  let [symbol (first (last pairs))]
     list `let vec pairs for [[name value] pairs] [name value] symbol
-
-
-) ; because of iexprs failure
