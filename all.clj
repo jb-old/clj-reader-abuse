@@ -8,7 +8,7 @@ defn ** [a b]
   Math/pow a b
 
 defmacro domacro [& body]
-  syntax-quote do
+  `#I
       defmacro domacro# []
         ~@body
       (domacro#)
