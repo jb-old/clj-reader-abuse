@@ -8,10 +8,10 @@ defn ** [a b]
   Math/pow a b
 
 defmacro domacro [& body]
-  `#I
+  `(#I
       defmacro domacro# []
         ~@body
-      (domacro#)
+      (domacro#))
 
 defmacro let* [& pairs]
   let [symbol (first (last pairs))]
