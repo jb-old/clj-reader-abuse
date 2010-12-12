@@ -11,6 +11,13 @@
 (defmacro is=
   [& forms] (list 'is (list* '= forms)))
 
+(println *stack-trace-depth* "in" (Thread/currentThread))
+(.bindRoot #'*stack-trace-depth* 5)
+(println *stack-trace-depth* "in" (Thread/currentThread))
+  
+(deftest settings
+  (is= *stack-trace-depth* 5))
+
 ; read-hws, those tests are easy to write.
 ; oh good, I have figured out how to write a test
 (deftest read-hws-null
